@@ -10,4 +10,4 @@
 
 // const { prisma } = require("../common")
 
-// module.exports = { query };
+// module.exports = { query }; 
