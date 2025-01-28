@@ -1,17 +1,32 @@
 const router = require("express").Router();
-const db = require("../db");
 const jwt = require("jsonwebtoken");
+
+const {
+  createNewInstructor,
+  loginInstructor,
+  getInstructor,
+} = require("../db/controller");
+
+const isLoggedIn = async (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  const token = authHeader?.slice(7);
+  if (!token) return next();
+  try {
+    const { id } = jwt.verify(token, process.env.JWT);
+    const instructor = await getInstructor(id);
+    req.instructor = instructor;
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
 // Register a new instructor account
 router.post("/register", async (req, res, next) => {
   try {
-    const {
-      rows: [instructor],
-    } = await db.query(
-      "INSERT INTO instructor (username, password) VALUES ($1, $2) RETURNING *",
-      [req.body.username, req.body.password]
-    );
-
+    const { username, password } = req.body;
+    const response = await createNewInstructor(username, password);
+    console.log(response);
     // Create a token with the instructor id
     const token = jwt.sign({ id: instructor.id }, process.env.JWT);
 
@@ -24,14 +39,11 @@ router.post("/register", async (req, res, next) => {
 // Login to an existing instructor account
 router.post("/login", async (req, res, next) => {
   try {
-    const {
-      rows: [instructor],
-    } = await db.query(
-      "SELECT * FROM instructor WHERE username = $1 AND password = $2",
-      [req.body.username, req.body.password]
-    );
+    const { username, password } = req.body;
+    const response = await loginInstructor(username, password);
+    console.log(response);
 
-    if (!instructor) {
+    if (!response) {
       return res.status(401).send("Invalid login credentials.");
     }
 
@@ -45,15 +57,9 @@ router.post("/login", async (req, res, next) => {
 });
 
 // Get the currently logged in instructor
-router.get("/me", async (req, res, next) => {
+router.get("/me", isLoggedIn, async (req, res, next) => {
   try {
-    const {
-      rows: [instructor],
-    } = await db.query("SELECT * FROM instructor WHERE id = $1", [
-      req.user?.id,
-    ]);
-
-    res.send(instructor);
+    res.status(200).send(req.instructor);
   } catch (error) {
     next(error);
   }

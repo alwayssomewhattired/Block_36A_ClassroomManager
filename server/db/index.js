@@ -1,12 +1,13 @@
-const { Pool } = require("pg");
-const db = new Pool({
-  connectionString:
-    process.env.DATABASE_URL ||
-    "postgres://localhost:5432/34a-classroom_manager",
-});
+// const { Pool } = require("pg");
+// const db = new Pool({
+//   connectionString:
+//     "postgres://postgres:palestinedeathcircle@localhost:5432/classroom_manager",
+// });
 
-async function query(sql, params, callback) {
-  return db.query(sql, params, callback);
-}
+// async function query(sql, params, callback) {
+//   return db.query(sql, params, callback);
+// }
 
-module.exports = { query };
+// const { prisma } = require("../common")
+
+// module.exports = { query };
