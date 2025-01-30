@@ -10,10 +10,13 @@ const {
 const isLoggedIn = async (req, res, next) => {
   const authHeader = req.headers.authorization;
   const token = authHeader?.slice(7);
-  if (!token) return next();
+  if (!token) {
+    return next();
+  }
   try {
     const { id } = jwt.verify(token, process.env.JWT);
     const instructor = await getInstructor(id);
+    console.log(instructor);
     req.instructor = instructor;
     next();
   } catch (error) {
@@ -25,8 +28,7 @@ const isLoggedIn = async (req, res, next) => {
 router.post("/register", async (req, res, next) => {
   try {
     const { username, password } = req.body;
-    const response = await createNewInstructor(username, password);
-    console.log(response);
+    const instructor = await createNewInstructor(username, password);
     // Create a token with the instructor id
     const token = jwt.sign({ id: instructor.id }, process.env.JWT);
 
@@ -41,14 +43,14 @@ router.post("/login", async (req, res, next) => {
   try {
     const { username, password } = req.body;
     const response = await loginInstructor(username, password);
-    console.log(response);
+    console.log(response.id);
 
     if (!response) {
       return res.status(401).send("Invalid login credentials.");
     }
 
     // Create a token with the instructor id
-    const token = jwt.sign({ id: instructor.id }, process.env.JWT);
+    const token = jwt.sign({ id: response.id }, process.env.JWT);
 
     res.send({ token });
   } catch (error) {
@@ -59,7 +61,9 @@ router.post("/login", async (req, res, next) => {
 // Get the currently logged in instructor
 router.get("/me", isLoggedIn, async (req, res, next) => {
   try {
-    res.status(200).send(req.instructor);
+    req.instructor == undefined
+      ? res.status(401).send("No instructor logged in.")
+      : res.status(200).send(req.instructor);
   } catch (error) {
     next(error);
   }
